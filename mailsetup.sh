@@ -15,7 +15,7 @@ myorigin = $mydomain
 
 certdir="/etc/letsencrypt/live/$domain"
 
-# Change the cert/key files to the default locations of the Let's Encrypt cert/key.
+# Change the cert/key files to the default locations of the Let's Encrypt cert/key
 postconf -e "smtpd_tls_key_file=$certdir/privkey.pem"
 postconf -e "smtpd_tls_cert_file=$certdir/fullchain.pem"
 # TODO postconf -e "stmpd_tls_dh1024_param_file=/etc/letsencrypt/ssl-dhparams.pem"
@@ -38,7 +38,7 @@ postconf -e "smtpd_sasl_auth_enable = yes"
 postconf -e "smtpd_sasl_type = dovecot"
 postconf -e "smtpd_sasl_path = private/auth"
 
-# Postfix postscreen config.
+# Postfix postscreen config
 postconf -e "postscreen_access_list = permit_mynetworks"
 postconf -e "postscreen_greet_banner ="
 postconf -e "postscreen_dnsbl_threshold = 5"
@@ -49,7 +49,7 @@ postconf -e "postscreen_greet_action = enforce"
 
 postconf -e "postscreen_dnsbl_whitelist_threshold = -2"
 
-# Policyd config (python).
+# Policyd config (python)
 postconf -e "policyd-spf_time_limit = 3600s"
 postconf -e "smtpd_relay_restrictions = permit_mynetworks
     permit_sasl_authenticated
@@ -93,12 +93,11 @@ spamassassin unix -     n       n       -       -       pipe
 policyd-spf unix  -     n       n       -       0       spawn
   user=policyd-spf argv=/usr/bin/policyd-spf" >> /etc/postfix/master.cf
 
-# By default, dovecot has a configs in /etc/dovecot/conf.d/ These files are
-# heavily commented and are great documentation if you want to read it, but
-# there are many options most of which do not pertain to this situation.
-# Instead, we simply overwrite /etc/dovecot/dovecot.conf because it's easier to
-# manage. The original is located at /usr/share/dovecot if you want to check
-# the defaults.
+# By default, dovecot has a configs in /etc/dovecot/conf.d/ These files have
+# nice documentation if you want to read it, but there are many options most of
+# which do not pertain to this situation.  Instead, we simply overwrite
+# /etc/dovecot/dovecot.conf because it's easier to manage. You can get a backup
+# of the original in /usr/share/dovecot if you want.
 
 echo "Creating Dovecot config..."
 echo "# %u for username
@@ -107,6 +106,8 @@ echo "# %u for username
 # %h the user's home directory
 
 ssl = required
+# ssl_protocols = TLSv1.2 #Dovecot >=2.3 use ssl_min_protocol = TLSv1.2
+
 ssl_prefer_server_ciphers = yes
 
 ssl_cert = <$certdir/fullchain.pem
@@ -121,6 +122,7 @@ imap_capability = +SPECIAL-USE
 userdb {
 	driver = passwd
 }
+#Fallback: Use plain old PAM to find user passwords
 passdb {
 	driver = pam
 }
@@ -213,6 +215,7 @@ ftp: root
 dmarc: root
 root: $USER
 " > /etc/aliases
+# Create aliases for root to main user account
 # newaliases command must be run whenever the aliases file is changed.
 newaliases
 
@@ -435,4 +438,7 @@ $dmarcentry
 
 $spfentry
 
-Records also saved to ~/dns_txt_records for later reference."
+Records also saved to ~/dns_txt_records for later reference.
+
+Once you do that, you're done! Check the README for how to add users/accounts
+and how to log in."
