@@ -1,13 +1,19 @@
 #!/bin/bash
 
+# IMPORTANT before running script verify the following steps have been completed.
+# 1.  Set servers hostname set (hostnamectl set-hostname <hostname>).
+# 2.  Logged in as user with sudo permissions.
+# 3.  SSL/TLS Certificate obtained and installed in default location (/etc/letsencrypt/live/$domain).
+# 4.  DNS MX, A and/or AAAA records completed and allowed to propagate.
+
 apt install postfix dovecot-imapd dovecot-sieve opendkim opendkim-tools spamassassin spamc fail2ban postfix-policyd-spf-python
 
 domain="$(cat /etc/mailname)"
 subdomain="mail"
 hostname="$subdomain.$domain"
 
-postfix-version=$(postconf mail_version)
-dovecot-version=$(dovecot --version)
+# postfix-version=$(postconf mail_version)
+# dovecot-version=$(dovecot --version)
 
 postconf -e "myhostname = $subdomain.$domain"
 mydestination = $myhostname, localhost.$mydomain, $mydomain
@@ -26,6 +32,7 @@ postconf -e "smtpd_tls_security_level = may"
 postconf -e "smtp_tls_loglevel = 1"
 postconf -e "smtp_tls_CAfile=$certdir/cert.pem"
 postconf -e "relay_domains = $mydestination"
+postconf -e "smtpd_delay_reject = yes"
 
 postconf -e "mailbox_size_limit = 0"
 postconf -e "message_size_limit = 0"
