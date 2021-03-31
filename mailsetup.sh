@@ -6,6 +6,18 @@
 # 3.  SSL/TLS Certificate obtained and installed in default location (/etc/letsencrypt/live/$domain).
 # 4.  DNS MX, A and/or AAAA records completed and allowed to propagate.
 
+# NOTE: When prompted at the beginning of the installation of Postfix in your FQDN
+# ie. domain.com not mail.domain.com.  This will be the domain used in your email
+# addresses account@domain.com.
+
+# Certbot to obtain your standalone SSL certificate run the follwing command after your
+# DNS records have been updated and after you have completed the initial setup of
+# the server.
+
+# sudo certbot certonly --standalone -d domain.com
+
+
+export TERM=xterm
 apt install postfix dovecot-imapd dovecot-sieve opendkim opendkim-tools spamassassin spamc fail2ban postfix-policyd-spf-python
 
 sudoer=$SUDO_USER
@@ -13,8 +25,8 @@ domain="$(cat /etc/mailname)"
 subdomain="mail"
 hostname="$subdomain.$domain"
 
-# postfix-version=$(postconf mail_version)
-# dovecot-version=$(dovecot --version)
+postfix-version=$(postconf mail_version)
+dovecot-version=$(dovecot --version)
 
 postconf -e "myhostname = $subdomain.$domain"
 postconf -e "mydestination = $myhostname, localhost.$mydomain, $mydomain, localhost"
@@ -46,7 +58,7 @@ postconf -e "smtpd_sasl_auth_enable = yes"
 postconf -e "smtpd_sasl_type = dovecot"
 postconf -e "smtpd_sasl_path = private/auth"
 
-# Postfix postscreen config
+# Postfix postscreen configuration.
 postconf -e "postscreen_access_list = permit_mynetworks"
 postconf -e "postscreen_greet_banner ="
 postconf -e "postscreen_dnsbl_threshold = 5"
@@ -57,7 +69,7 @@ postconf -e "postscreen_greet_action = enforce"
 
 postconf -e "postscreen_dnsbl_whitelist_threshold = -2"
 
-# Policyd config (python)
+# Policyd configuration (python).
 postconf -e "policyd-spf_time_limit = 3600s"
 postconf -e "smtpd_relay_restrictions = permit_mynetworks
     permit_sasl_authenticated
@@ -224,7 +236,6 @@ ftp: root
 dmarc: root
 root: $sudoer
 " > /etc/aliases
-# Create aliases for root to main user account
 # newaliases command must be run whenever the aliases file is changed.
 newaliases
 
@@ -245,6 +256,7 @@ grep -q nullok /etc/pam.d/dovecot ||
 echo "auth    required        pam_unix.so nullok
 account required        pam_unix.so" >> /etc/pam.d/dovecot
 
+# Fail2ban settings and configuration.
 echo "Setting up fail2ban jails..."
 echo "[DEFAULT]
 bantime = 24h
@@ -316,6 +328,7 @@ prefregex = ^%(__prefix_line)s
 failregex = (?:DNSBL rank \d for +)\[<HOST>\]
 " > /etc/fail2ban/filter.d/postfix-postscreen.conf
 
+# SPF-Policyd settings and configuration.
 echo "Writing policyd config..."
 echo "# For a fully commented sample config file see policyd-spf.conf.commented
 
@@ -354,7 +367,7 @@ chgrp opendkim /etc/postfix/dkim/*
 chmod g+r /etc/postfix/dkim/*
 chmod o+r /etc/postfix/dkim/default.txt
 
-# Generate the OpenDKIM info:
+# Generate the OpenDKIM info...
 echo "Configuring openDKIM..."
 grep -q "$domain" /etc/postfix/dkim/keytable 2>/dev/null ||
 echo "default._domainkey.$domain $domain:default:/etc/postfix/dkim/default.private" >> /etc/postfix/dkim/keytable
@@ -403,7 +416,7 @@ dkimentry="default._domainkey	TXT		v=DKIM1; k=rsa; $pval"
 dmarcentry="_dmarc	TXT		v=DMARC1; p=none; rua=mailto:dmarc@$domain; fo=1"
 spfentry="@		TXT		v=spf1 mx a:$domain -all"
 
-# Spamassassin
+# Spamassassin setting and configuration.
 sed -i '/^OPTIONS/d;/^CRON/d' /etc/default/spamassassin
 echo "SAHOME=\"/var/lib/spamassassin/\"
 OPTIONS=\"--create-prefs --max-children 5 --username debian-spamd --helper-home-dir ${SAHOME} -s /var/log/spamassassin/spamd.log\"
@@ -424,14 +437,16 @@ echo "/var/log/spamassassin/spamd.log {
     missingok
 
     create 640 debian-spamd debian-spamd
-}" >> /etc/logrotate.d/spamassassin
+}" > /etc/logrotate.d/spamassassin
 
 postfix check
 postfix reload
 
-echo "$dkimentry
-$dmarcentry
-$spfentry" > "$HOME/dns_txt_records"
+echo -e "$dkimentry \n
+$dmarcentry \n
+$spfentry \n
+Postfix version $postfix-version installed successfully.
+Dovecot version $dovecot-version installed successfully" > "$HOME/dns_txt_records"
 
 echo "
 *******************************************************************************

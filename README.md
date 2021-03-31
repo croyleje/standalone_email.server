@@ -1,14 +1,9 @@
 # standalone_email.server
 
-This script will help set up a email server on Debian/Ubuntu based servers.
-Unlike similar scripts this sets up a standalone email server there is no nginx
-or apache server installed with the email server.  If you are looking to setup
-only an email sever and don't plan on having a website _or_ want to add an email
-server to an already existing web server.  I highly recommend having a separate
-server for your email
-separate server or domain for your email which I do recommend this script will
-help you get everything setup.  It has been tested on Debian 10 Buster and
-Ubuntu 18.04LTS but should be compatible with any Debian/Ubuntu based server.
+This script will setup an email server on a Debian/Ubuntu based server.  Unlike
+similar scripts this installs a standalone email server, there is no need to install
+an Nginx or Apache placeholder website and has been tested on Debian 10 Buster
+and Ubuntu 18.04LTS.
 
 **Read this readme and the script's comments before running it.**
 
@@ -16,7 +11,7 @@ When prompted by the dialog menu at the beginning of the postfix install, select
 "Internet Site", then give your FQDN (Fully Qualified Domain Name) without any
 subdomain, ie. `domain.com` **not** `mail@domain.com`.
 
-## Before running script.
+## Certbot
 
 Make sure your DNS records are updated before running _certbot_ you can use the
 `whois` command to verify that any changes you've made have been propagated
@@ -29,8 +24,8 @@ command.
 ***IMPORTANT*** Certbot uses short term certificates that expire every 90 days.
 The Certbot package installs a systemd timer and service that can used to
 automate the renewal or a simple cron job can be used.  Certbot needs to answer
-a cryptographic challenge issued by the Let\’s Encrypt API in order to prove we
-control our domain. It uses ports 80 (HTTP) or 443 (HTTPS) to accomplish this,
+a cryptographic challenge issued by the Let\’s Encrypt API in order to prove
+control of the domain. It uses ports 80 (HTTP) or 443 (HTTPS) to accomplish this,
 ensure one of these ports is open in your firewall.
 
 ## This script installs.
@@ -133,6 +128,10 @@ This will create a new user *"example"* with the email address *"exmaple@domain.
   config.  I suggest redirecting them all to *"root"* and then redirecting
   *"root"* to your main account **(this is how I have set up the aliases file)**.
 
+- Additional aliases maybe added to the `/etc/aliases` file to redirect mail to
+  any account.  If you decide to add additional aliases make sure to run the
+  `newaliases` command with sudo privileges afterwords.
+
 ## Logging in from an MUA (ie. mutt, neomutt, ect.) remotely
 
 Let's say you want to access your mail with Thunderbird or mutt or another
@@ -163,8 +162,6 @@ email program. For my domain, the server information will be as follows:
   default and currently set *Postfix* settings.  *Remember any changes to either
   Postfix Dovecot or Fail2ban will not take effect until that service is
   restarted*.
-- [This site](https://www.checktls.com) also ofter some automated tests to help
-  diagnose email server issues including DMARC, DKIM and rDNS.
 
 **NOTE**: When logging into a remote server via ssh it will read some of your
 environment variables and set them on the server.  If your using one of the more
@@ -181,10 +178,10 @@ start check this first.
 ## Mailbox location and format.
 
  Mail will be stored in Maildir form in the home directory in \$home/Mail.  This
- makes it easier for use with offline sync @ offlineimap or isync(mbsync).
+ makes it easier for use with offline sync ie. offlineimap or isync(mbsync).
 
- The mailbox names are: Inbox, Sent, Drafts, Archive, Junk, Trash these are
- fairly standard names but can be changed to your liking but if your planning
+ The mailbox names are: Inbox, Sent, Drafts, Archive, Junk(Spam), Trash these are
+ fairly standard names but can be changed to your liking, but if your planning
  on having more then one account or sync with other imap servers I recommend
  staying with this naming convention.
 
