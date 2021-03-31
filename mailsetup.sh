@@ -469,5 +469,8 @@ Records also saved to ~/dns_txt_records for later reference.
 Once you do that, you're done! Check the README for how to add users/accounts
 and how to log in."
 
+# Included in this git repo I have also included copies of the EICAR and GTUBE
+# text files that can be used to check antivirus and spam filters.
+
 # v=spf1 a mx a:default.com -all fail
 # v=spf1 a mx a:default.com ~all softfail
