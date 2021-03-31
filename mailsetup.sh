@@ -1,13 +1,14 @@
 #!/bin/bash
 
 # IMPORTANT before running script verify the following steps have been completed.
-# 1.  Set servers hostname set (hostnamectl set-hostname <hostname>).
+# 1.  Set servers hostname (hostnamectl set-hostname <hostname>).
 # 2.  Logged in as user with sudo permissions.
 # 3.  SSL/TLS Certificate obtained and installed in default location (/etc/letsencrypt/live/$domain).
 # 4.  DNS MX, A and/or AAAA records completed and allowed to propagate.
 
 apt install postfix dovecot-imapd dovecot-sieve opendkim opendkim-tools spamassassin spamc fail2ban postfix-policyd-spf-python
 
+sudoer=$SUDO_USER
 domain="$(cat /etc/mailname)"
 subdomain="mail"
 hostname="$subdomain.$domain"
@@ -16,8 +17,8 @@ hostname="$subdomain.$domain"
 # dovecot-version=$(dovecot --version)
 
 postconf -e "myhostname = $subdomain.$domain"
-mydestination = $myhostname, localhost.$mydomain, $mydomain
-myorigin = $mydomain
+postconf -e "mydestination = $myhostname, localhost.$mydomain, $mydomain, localhost"
+postconf -e "myorigin = $mydomain"
 
 certdir="/etc/letsencrypt/live/$domain"
 
@@ -73,7 +74,8 @@ postconf -e "home_mailbox = Maildir/"
 
 # Postfix master.cf integration of postscreen and spamassassin confirmation from
 # Postfix postsreen README http://www.postfix.org/POSTSCREEN_README.html
-sed -i "/^\s*-o/d;/^\s*submission/d;/^\s*smtp/d;/^\s*cleanup/d" /etc/postfix/master.cf
+# sed -i "/^\s*-o/d;/^\s*submission/d;/^\s*smtp/d;/^\s*cleanup/d" /etc/postfix/master.cf
+sed -i "/^\s*-o/d;/^\s*submission/d;/^\s*smtp/d" /etc/postfix/master.cf
 
 echo -n "# Postfix master.cg configuration.
 smtp unix -             -       y       -       -       smtp
@@ -95,7 +97,7 @@ smtps     inet  n       -       y       -       -       smtpd
   -o smtpd_sasl_auth_enable=yes
 
 spamassassin unix -     n       n       -       -       pipe
-  user=spamd argv=/usr/bin/spamc -f -e /usr/sbin/sendmail -oi -f \${sender} \${recipient}
+  user=debian-spamd argv=/usr/bin/spamc -f -e /usr/sbin/sendmail -oi -f \${sender} \${recipient}
 
 policyd-spf unix  -     n       n       -       0       spawn
   user=policyd-spf argv=/usr/bin/policyd-spf" >> /etc/postfix/master.cf
@@ -220,7 +222,7 @@ news: root
 www: root
 ftp: root
 dmarc: root
-root: $USER
+root: $sudoer
 " > /etc/aliases
 # Create aliases for root to main user account
 # newaliases command must be run whenever the aliases file is changed.
@@ -398,13 +400,13 @@ done
 
 pval="$(tr -d "\n" </etc/postfix/dkim/default.txt | sed "s/k=rsa.* \"p=/k=rsa; p=/;s/\"\s*\"//;s/\"\s*).*//" | grep -o "p=.*")"
 dkimentry="default._domainkey	TXT		v=DKIM1; k=rsa; $pval"
-dmarcentry="_dmarc	TXT		v=DMARC1; p=quarantine; rua=mailto:dmarc@$domain; fo=1"
+dmarcentry="_dmarc	TXT		v=DMARC1; p=none; rua=mailto:dmarc@$domain; fo=1"
 spfentry="@		TXT		v=spf1 mx a:$domain -all"
 
 # Spamassassin
 sed -i '/^OPTIONS/d;/^CRON/d' /etc/default/spamassassin
-echo "SAHOME="/var/log/spamassassin/"
-OPTIONS="--create-prefs --max-children 5 --helper-home-dir --username spamd -H ${SAHOME} -s ${SAHOME}spamd.log"
+echo "SAHOME=\"/var/lib/spamassassin/\"
+OPTIONS=\"--create-prefs --max-children 5 --username debian-spamd --helper-home-dir ${SAHOME} -s /var/log/spamassassin/spamd.log\"
 CRON=1" >> /etc/default/spamassassin
 
 cp /etc/spamassassin/local.cf /etc/spamassassin/local.cf.bak
@@ -415,12 +417,14 @@ use_bayes               1
 bayes_auto_learn        1
 " > /etc/spamassassin/local.cf
 
-groupadd spamd
-useradd -g spamd -s /usr/sbin/nologin -d /var/log/spamassassin spamd
-mkdir /var/log/spamassassin
-chown spamd:spamd /var/log/spamassassin
+echo "/var/log/spamassassin/spamd.log {
+    weekly
+    rotate 4
+    nocompress
+    missingok
 
-useradd -G mail dmarc
+    create 640 debian-spamd debian-spamd
+}" >> /etc/logrotate.d/spamassassin
 
 postfix check
 postfix reload
@@ -449,3 +453,6 @@ Records also saved to ~/dns_txt_records for later reference.
 
 Once you do that, you're done! Check the README for how to add users/accounts
 and how to log in."
+
+# v=spf1 a mx a:defaultbackend.com -all fail
+# v=spf1 a mx a:defaultbackend.com ~all softfail
