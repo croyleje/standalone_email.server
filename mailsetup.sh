@@ -454,5 +454,5 @@ Records also saved to ~/dns_txt_records for later reference.
 Once you do that, you're done! Check the README for how to add users/accounts
 and how to log in."
 
-# v=spf1 a mx a:defaultbackend.com -all fail
-# v=spf1 a mx a:defaultbackend.com ~all softfail
+# v=spf1 a mx a:default.com -all fail
+# v=spf1 a mx a:default.com ~all softfail

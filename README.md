@@ -26,14 +26,14 @@ command.
 
 `sudo certbot certonly --standalone -d domain.com`
 
-**IMPORTANT** Certbot uses short term certificates that expire every 90 days.
+***IMPORTANT*** Certbot uses short term certificates that expire every 90 days.
 The Certbot package installs a systemd timer and service that can used to
 automate the renewal or a simple cron job can be used.  Certbot needs to answer
 a cryptographic challenge issued by the Let\’s Encrypt API in order to prove we
 control our domain. It uses ports 80 (HTTP) or 443 (HTTPS) to accomplish this,
 ensure one of these ports is open in your firewall.
 
-## This script installs
+## This script installs.
 
 - **Postfix** to send and receive mail.
 - **Dovecot** to get mail to your email client (mutt, Thunderbird, etc).
@@ -42,17 +42,9 @@ ensure one of these ports is open in your firewall.
 - **Policyd-spf-python** to help prevent spoofing and phishing attacks.
 - **Fail2ban** to help secure the server and block brute force attacks.
 - **DNSBLs** blacklists enforced by postfix-postscreen and Spamassassin.
-- Config files for all services and that setup _postfix.rbl_ and logins.
+- **Logrotate** configs where needed for the installed packages.
 
-## This script does _*not*_
-
-- use a SQL database or anything like that.
-- set up a graphical interface for mail like Roundcube or Squirrel Mail. If you
-  want that, you'll have to install it yourself. I just use mutt have an offline
-  mirror of my email setup and that is what I recommend. There are other ways of
-  doing it though, like Thunderbird, Mailspring, etc.
-
-## Server security
+## Server security.
 
   This script sets some **baselevel** security in the way of _Fail2ban_, _TLS_,
   _SPF_, _Spamassassin_, and _DNSBLs_ but you most have secure passwords and
@@ -68,45 +60,44 @@ ensure one of these ports is open in your firewall.
 
   The _Spamassassin_ default config for versions >= 3.0 has **URIDNSBL** enabled by
   default so it is highly recommended to use one of the newer release versions.
+
   The _Fail2ban_ configs setup five jails _sshd_, _dovecot_, _postfix_,
   _postfix-postscreen_ (Not covered by postfix aggressive mode) and _recidive_
-  these along with _SPF_ checking instituted via postfix config provides a wide
+  these along with _SPF_ checking instituted via postfix provides a wide
   array of not only spam blocking but also general server security and also email
   server security.
 
-##  Requirements
+##  Requirements.
 
  1. A **Debian or Ubuntu server**. I've tested this on a
-    [Vultr](https://www.vultr.com/?ref=8637959) Debian servers and one running
-    Ubuntu and their setup works, but any basic VPS hosts package will have
-    similar/possibly identical default settings which will let you run this on
-    them.
+    [Vultr](https://www.vultr.com/?ref=8637959) Debian 10 servers and servers running
+    Ubuntu 18.04LTS.
  2. **A Let's Encrypt SSL certificate for your domain.** This is where the
-	script departs from others.  You will **NOT** need to create an nginx server
-    and setup a placeholder website.  We will be using a standalone SSL
+	  script departs from others.  You will **NOT** need to create an Nginx or
+    Apache server and setup a placeholder website.  We will be using a standalone SSL
     certificate from Let's Encrypt [Certbot](https://certbot.eff.org/).
- 3. You need to set up DNS records for **A RECORD**, **CNAME**, **MX**, **TXT**
-    for IPV4 and an additional **AAAA** if your planning on using IPV6.
-	Detailed examples commented in script.
+ 3. You need to set up some minimal DNS records for **A RECORD**, **MX**, and
+    **AAAA** if your planning on using IPV6.
  4. **A Reverse DNS entry for your site.** Go to your VPS settings and add an
     entry for your IPV4 Reverse DNS that goes from your IP address to
-    `mail.<yourdomain.com>`. If you would like IPV6, you can do the same for
+    `mail.<yourdomain.com>`. If your using IPV6, you can do the same for
     that. This has been tested on Vultr, and all decent VPS hosts will have
-    a section on their instance settings page to add a reverse DNS PTR entry.
-    You can use the 'Test Email Server' or ':smtp' tool on
+    a section on their instance settings page to add a reverse rDNS entry.
+    You can use the 'Test Email Server' or 'smtp' tool on
     [mxtoolbox](https://mxtoolbox.com/SuperTool.aspx) to test if you set up
-    a reverse DNS correctly. This step is not required for everyone, but some
-    big email services like gmail will stop emails coming from mail servers
-    with no/invalid rDNS lookups. This means your email will fail to even
-    make it to the recipients spam folder; it will never make it to them.
+    a reverse DNS correctly. Most large email services like gmail and Outlook
+    will stop emails coming from mail servers without a invalid rDNS lookup.
+    This means your email will fail to even make it to the recipients spam folder.
  5. `apt purge` all your previous (failed) attempts to install and configure a
     mailserver. Get rid of _all_ your system settings for Postfix, Dovecot,
     OpenDKIM and everything else. This script builds off of a fresh install.
- 6. Some VPS providers block port 25 (used to send mail). You may need to
-    request that this port be opened to send mail successfully. Although I have
+    Most VPS providers block port 25 by default to prevent spammers from using
+    there services to send out bulk emails. You will probably have to open a
+    support ticket with your VPS and verify your use case to have them open the
+    port for you.     request that this port be opened to send mail successfully. Although I have
     never had to do this on a Vultr VPS, others have had this issue so if you
     cannot send, contact your VPS provider.
- 7. **Set System Timezone** most if not all VPS providers by default have the
+ 6. **Set System Timezone** most if not all VPS providers by default have the
     timezone set for Universal Time UTC but for logging reasons and to have easily
     readable timestamps I recommend changing you your timezone to suite your
     locale.  This can be done easily with the `timedatectl` command and will
@@ -122,12 +113,9 @@ ensure one of these ports is open in your firewall.
 - Certbot renewal is automatically enabled on systems using the systemd init
   system.  Otherwise a simple crontab will work but you also need to make sure
   you restart your server after renewal the new certificate is not applied until
-  either reboot or system services restart.  So if you plan on using a cron job
-  make sure to write a simple script or setup a second job to restart services.
-  This is all handled by the systemd timer and service.
+  either reboot or system services restart.
 
-## Making new users/mail accounts
-
+## Making new users/mail accounts.
 
 `useradd -m -G mail example`
 
@@ -135,7 +123,7 @@ ensure one of these ports is open in your firewall.
 
 This will create a new user *"example"* with the email address *"exmaple@domain.com"*.
 
-## Setting aliases
+## Setting aliases.
 
 - SMTP/RFC mandate that any publicly accessible mail server that accepts any mail
   at all must also except mail at the *"postmaster"* account and some might also
