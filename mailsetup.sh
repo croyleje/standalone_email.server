@@ -28,9 +28,10 @@ hostname="$subdomain.$domain"
 postfix-version=$(postconf mail_version)
 dovecot-version=$(dovecot --version)
 
+postconf -e "biff = no"
 postconf -e "myhostname = $subdomain.$domain"
-postconf -e "mydestination = $myhostname, localhost.$mydomain, $mydomain, localhost"
-postconf -e "myorigin = $mydomain"
+postconf -e "mydestination = \$myhostname, localhost.\$mydomain, \$mydomain, localhost"
+postconf -e "myorigin = \$mydomain"
 
 certdir="/etc/letsencrypt/live/$domain"
 
@@ -44,7 +45,7 @@ postconf -e "smtp_tls_security_level = may"
 postconf -e "smtpd_tls_security_level = may"
 postconf -e "smtp_tls_loglevel = 1"
 postconf -e "smtp_tls_CAfile=$certdir/cert.pem"
-postconf -e "relay_domains = $mydestination"
+postconf -e "relay_domains = \$mydestination"
 postconf -e "smtpd_delay_reject = yes"
 
 postconf -e "mailbox_size_limit = 0"
