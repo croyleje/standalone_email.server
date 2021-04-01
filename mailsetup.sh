@@ -25,9 +25,6 @@ domain="$(cat /etc/mailname)"
 subdomain="mail"
 hostname="$subdomain.$domain"
 
-postfix-version=$(postconf mail_version)
-dovecot-version=$(dovecot --version)
-
 postconf -e "biff = no"
 postconf -e "myhostname = $subdomain.$domain"
 postconf -e "mydestination = \$myhostname, localhost.\$mydomain, \$mydomain, localhost"
@@ -445,9 +442,7 @@ postfix reload
 
 echo -e "$dkimentry \n
 $dmarcentry \n
-$spfentry \n
-Postfix version $postfix-version installed successfully.
-Dovecot version $dovecot-version installed successfully" > "$HOME/dns_txt_records"
+$spfentry" >> "$HOME/dns_txt_records"
 
 echo "
 *******************************************************************************
