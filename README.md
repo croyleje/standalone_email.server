@@ -118,8 +118,10 @@ ensure one of these ports is open in your firewall.
 - Auto discovery DNS service records.
 
 
-| Service     | Protocol | Priority | Weight | Port | Target          | Description    |
 
+
+| Service     | Protocol | Priority | Weight | Port | Target          | Description    |
+-----|-----|------|-----|-------|-------|-------|
 | _imaps      | _tcp     | 0        | 1      | 993  | mail.domain.com | Encrypted IMAP |
 | _smtps      | _tcp     | 0        | 1      | 465  | mail.domain.com | Encrypted SMTP |
 | _submission | _tcp     | 0        | 1      | 587  | mail.domain.com | Submissions    |
