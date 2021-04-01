@@ -110,6 +110,18 @@ ensure one of these ports is open in your firewall.
   you restart your server after renewal the new certificate is not applied until
   either reboot or system services restart.
 
+## DNS/rDNS records.
+
+- A/AAAA RECORD mail.doamin.com IP ADDRESS
+- MX RECORD @ mail.domain.com
+
+- Auto discovery DNS service records.
+
+| Service     | Protocol | Priority | Weight | Port | Target          | Description    |
+| _imaps      | _tcp     | 0        | 1      | 993  | mail.domain.com | Encrypted IMAP |
+| _smtps      | _tcp     | 0        | 1      | 465  | mail.domain.com | Encrypted SMTP |
+| _submission | _tcp     | 0        | 1      | 587  | mail.domain.com | Submissions    |
+
 ## Making new users/mail accounts.
 
 `useradd -m -G mail example`
