@@ -39,7 +39,7 @@ ensure one of these ports is open in your firewall.
 - **DNSBLs** blacklists enforced by postfix-postscreen and Spamassassin.
 - **Logrotate** configs where needed for the installed packages.
 
-## Server security.
+## Server security
 
   This script sets some **baselevel** security in the way of _Fail2ban_, _TLS_,
   _SPF_, _Spamassassin_, and _DNSBLs_ but you most have secure passwords and
@@ -62,7 +62,7 @@ ensure one of these ports is open in your firewall.
   array of not only spam blocking but also general server security and also email
   server security.
 
-##  Requirements.
+##  Requirements
 
  1. A **Debian or Ubuntu server**. I've tested this on a
     [Vultr](https://www.vultr.com/?ref=8637959) Debian 10 servers and servers running
@@ -132,7 +132,7 @@ This will create a new user *"example"* with the email address *"exmaple@domain.
   any account.  If you decide to add additional aliases make sure to run the
   `newaliases` command with sudo privileges afterwords.
 
-## Logging in from an MUA (ie. mutt, neomutt, ect.) remotely
+## Logging in from an MUA (ie. mutt, neomutt, ect.) remotely.
 
 Let's say you want to access your mail with Thunderbird or mutt or another
 email program. For my domain, the server information will be as follows:
