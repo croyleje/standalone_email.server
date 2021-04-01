@@ -69,13 +69,8 @@ postconf -e "postscreen_dnsbl_whitelist_threshold = -2"
 
 # Policyd configuration (python).
 postconf -e "policyd-spf_time_limit = 3600s"
-postconf -e "smtpd_relay_restrictions = permit_mynetworks
-    permit_sasl_authenticated
-    reject_unauth_destination"
-postconf -e "smtpd_recipient_restrictions = permit_mynetworks
-    permit_sasl_authenticated
-    reject_unauth_destination
-    check_policy_service unix:private/policyd-spf"
+postconf -e "smtpd_relay_restrictions = permit_mynetworks permit_sasl_authenticated reject_unauth_destination"
+postconf -e "smtpd_recipient_restrictions = permit_mynetworks permit_sasl_authenticated reject_unauth_destination check_policy_service unix:private/policyd-spf"
 
 # NOTE: the trailing slash here, or for any directory name in the home_mailbox
 # command, is necessary as it distinguishes a Maildir (which is the actual
@@ -416,13 +411,14 @@ spfentry="@		TXT		v=spf1 mx a:$domain -all"
 
 # Spamassassin setting and configuration.
 sed -i '/^OPTIONS/d;/^CRON/d' /etc/default/spamassassin
+mkdir "/var/log/spamassassin"
 echo "SAHOME=\"/var/lib/spamassassin/\"
 OPTIONS=\"--create-prefs --max-children 5 --username debian-spamd --helper-home-dir ${SAHOME} -s /var/log/spamassassin/spamd.log\"
 CRON=1" >> /etc/default/spamassassin
 
 cp /etc/spamassassin/local.cf /etc/spamassassin/local.cf.bak
 echo "rewrite_header Subject [***** SPAM _SCORE_ *****]
-report_safe 2
+report_safe             2
 required_score          5.0
 use_bayes               1
 bayes_auto_learn        1
