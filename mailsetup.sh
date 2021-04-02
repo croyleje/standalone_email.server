@@ -255,7 +255,6 @@ echo "[DEFAULT]
 bantime = 24h
 findtime = 20m
 maxretry = 3
-destemail root@localhost
 sendername = fail2ban
 mta = sendmail
 action = %(action_mw)s
@@ -305,7 +304,7 @@ bantime = 31557600
 logpath = /var/log/fail2ban.log
 backend = auto
 action = %(action_)s
-" > /etc/fail2ban/jails.local
+" > /etc/fail2ban/jail.local
 
 echo "Writing postscreen filter..."
 echo "# Fail2ban filter for selected Postfix/Postscreen SMTP rejections

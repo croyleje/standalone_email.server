@@ -117,9 +117,6 @@ ensure one of these ports is open in your firewall.
 
 - Auto discovery DNS service records.
 
-
-
-
 | Service     | Protocol | Priority | Weight | Port | Target          | Description    |
 -----|-----|------|-----|-------|-------|-------|
 | _imaps      | _tcp     | 0        | 1      | 993  | mail.domain.com | Encrypted IMAP |
@@ -178,6 +175,8 @@ email program. For my domain, the server information will be as follows:
   default and currently set *Postfix* settings.  *Remember any changes to either
   Postfix Dovecot or Fail2ban will not take effect until that service is
   restarted*.
+- [This site](https://www.mail-tester.com) is also excellent to test your new
+  server.
 
 **NOTE**: When logging into a remote server via ssh it will read some of your
 environment variables and set them on the server.  If your using one of the more
