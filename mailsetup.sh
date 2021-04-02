@@ -27,7 +27,7 @@ hostname="$subdomain.$domain"
 
 postconf -e "biff = no"
 postconf -e "myhostname = $subdomain.$domain"
-postconf -e "mydestination = \$myhostname, localhost.\$mydomain, \$mydomain, localhost"
+# postconf -e "mydestination = \$myhostname, localhost.\$mydomain, localhost, \$mydomain"
 postconf -e "myorigin = \$mydomain"
 
 certdir="/etc/letsencrypt/live/$domain"
@@ -120,8 +120,6 @@ echo "# %u for username
 # %h the user's home directory
 
 ssl = required
-# ssl_protocols = TLSv1.2 #Dovecot >=2.3 use ssl_min_protocol = TLSv1.2
-
 ssl_prefer_server_ciphers = yes
 
 ssl_cert = <$certdir/fullchain.pem
@@ -400,8 +398,8 @@ postconf -e "mailbox_command = /usr/lib/dovecot/deliver"
 # Spamassassin setting and configuration.
 sed -i '/^OPTIONS/d;/^CRON/d' /etc/default/spamassassin
 mkdir "/var/log/spamassassin"
-echo "SAHOME=\"/var/lib/spamassassin/\"
-OPTIONS=\"--create-prefs --max-children 5 --username debian-spamd --helper-home-dir ${SAHOME} -s /var/log/spamassassin/spamd.log\"
+SAHOME="/var/lib/spamassassin"
+echo "OPTIONS=\"--create-prefs --max-children 5 --username debian-spamd --helper-home-dir ${SAHOME} -s /var/log/spamassassin/spamd.log\"
 CRON=1" >> /etc/default/spamassassin
 
 cp /etc/spamassassin/local.cf /etc/spamassassin/local.cf.bak
