@@ -27,7 +27,7 @@ hostname="$subdomain.$domain"
 
 postconf -e "biff = no"
 postconf -e "myhostname = $subdomain.$domain"
-# postconf -e "mydestination = \$myhostname, localhost.\$mydomain, localhost, \$mydomain"
+postconf -e "mydestination = \$myhostname, localhost.\$mydomain, localhost, \$mydomain"
 postconf -e "myorigin = \$mydomain"
 
 certdir="/etc/letsencrypt/live/$domain"
