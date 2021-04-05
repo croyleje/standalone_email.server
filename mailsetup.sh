@@ -16,7 +16,6 @@
 
 # sudo certbot certonly --standalone -d domain.com
 
-
 export TERM=xterm
 apt install postfix dovecot-imapd dovecot-sieve opendkim opendkim-tools spamassassin spamc fail2ban postfix-policyd-spf-python
 
@@ -26,46 +25,52 @@ subdomain="mail"
 hostname="$subdomain.$domain"
 
 postconf -e "biff = no"
+postconf -e "myorigin = \$mydomain"
 postconf -e "myhostname = $subdomain.$domain"
 postconf -e "mydestination = \$myhostname, localhost.\$mydomain, localhost, \$mydomain"
-postconf -e "myorigin = \$mydomain"
+postconf -e "mynetworks = 127.0.0.0/8 [::ffff:127.0.0.0]/104 [::1]/128"
+postconf -e "smtpd_delay_reject = yes"
+
+postconf -e "relay_domains = \$mydestination"
+postconf -e "mailbox_size_limit = 0"
+postconf -e "message_size_limit = 0"
+postconf -e "disable_vrfy_command = yes"
 
 certdir="/etc/letsencrypt/live/$domain"
 
 # Change the cert/key files to the default locations of the Let's Encrypt cert/key
-postconf -e "smtpd_tls_key_file=$certdir/privkey.pem"
-postconf -e "smtpd_tls_cert_file=$certdir/fullchain.pem"
-# TODO postconf -e "stmpd_tls_dh1024_param_file=/etc/letsencrypt/ssl-dhparams.pem"
 postconf -e "smtpd_use_tls = yes"
 postconf -e "smtpd_tls_auth_only = yes"
-postconf -e "smtp_tls_security_level = may"
 postconf -e "smtpd_tls_security_level = may"
-postconf -e "smtp_tls_loglevel = 1"
-postconf -e "smtp_tls_CAfile=$certdir/cert.pem"
-postconf -e "relay_domains = \$mydestination"
-postconf -e "smtpd_delay_reject = yes"
+postconf -e "smtpd_tls_key_file = $certdir/privkey.pem"
+postconf -e "smtpd_tls_cert_file = $certdir/fullchain.pem"
+postconf -e "smtpd_tls_CApath = /etc/ssl/certs/"
 
-postconf -e "mailbox_size_limit = 0"
-postconf -e "message_size_limit = 0"
-postconf -e "disable_vrfy_command = yes"
-postconf -e "mynetworks = 127.0.0.0/8 [::ffff:127.0.0.0]/104 [::1]/128"
+# TODO postconf -e "stmpd_tls_dh1024_param_file=/etc/letsencrypt/ssl-dhparams.pem"
 
 # Here we tell Postfix to look to Dovecot for authenticating users/passwords.
 # Dovecot will be putting an authentication socket in /var/spool/postfix/private/auth
 postconf -e "smtpd_sasl_auth_enable = yes"
 postconf -e "smtpd_sasl_type = dovecot"
 postconf -e "smtpd_sasl_path = private/auth"
+postconf -e "smtpd_sasl_security_options = noanonymous, noplaintext"
+postconf -e "smtpd_sasl_tls_security_options = noanonymous"
+
+postconf -e "smtp_tls_loglevel = 1"
+postconf -e "smtp_tls_security_level = may"
+postconf -e "smtp_tls_cert_file = $cerdir/fullchain.pem"
+postconf -e "smtp_tls_key_file = $certdir/privkey.pem"
+postconf -e "smtp_tls_CApath = /etc/ssl/certs/"
 
 # Postfix postscreen configuration.
 postconf -e "postscreen_access_list = permit_mynetworks"
 postconf -e "postscreen_greet_banner ="
+postconf -e "postscreen_dnsbl_whitelist_threshold = -2"
 postconf -e "postscreen_dnsbl_threshold = 5"
 postconf -e "postscreen_dnsbl_sites = zen.spamhaus.org*3 bl.spamcop.net*2 b.barracudacentral.org*2"
 
 postconf -e "postscreen_dnsbl_action = enforce"
 postconf -e "postscreen_greet_action = enforce"
-
-postconf -e "postscreen_dnsbl_whitelist_threshold = -2"
 
 # Policyd configuration (python).
 postconf -e "policyd-spf_time_limit = 3600s"
@@ -206,13 +211,12 @@ plugin {
 }
 " > /etc/dovecot/dovecot.conf
 
-
 # Setting aliases these aliases assume you will have one main account to receive
 # system mail as well as your personal mail.  You can also add additional accounts
 # if you want more but one will be your main account this is safer then using
 # the root account and retrieving mail with a root login. (SEE COMMENT AT END OF
 # ALIAS SECTION)
-echo "
+cat >> /etc/aliases << EOF
 mailer-daemon: root
 postmaster:	root
 hostmaster:	root
@@ -226,7 +230,7 @@ www: root
 ftp: root
 dmarc: root
 root: $sudoer
-" > /etc/aliases
+EOF
 # newaliases command must be run whenever the aliases file is changed.
 newaliases
 
@@ -338,7 +342,6 @@ TempError_Defer = False
 
 skip_addresses = 127.0.0.0/8,::ffff:127.0.0.0/104,::1" > /etc/postfix-policyd-spf-python/policyd-spf.conf
 
-
 # OpenDKIM
 
 # A lot of the big name email services, like Google, will automatically
@@ -387,8 +390,6 @@ sed -i "/^SOCKET/d" /etc/default/opendkim && echo "SOCKET=\"inet:12301@localhost
 
 # Here we add to postconf the needed settings for working with OpenDKIM
 echo "Configuring Postfix with OpenDKIM settings..."
-postconf -e "smtpd_sasl_security_options = noanonymous, noplaintext"
-postconf -e "smtpd_sasl_tls_security_options = noanonymous"
 postconf -e "milter_default_action = accept"
 postconf -e "milter_protocol = 6"
 postconf -e "smtpd_milters = inet:localhost:12301"
@@ -428,7 +429,7 @@ done
 # Generating DNS txt entries.  See README.md for additional DNS service records and further information.
 pval="$(tr -d "\n" </etc/postfix/dkim/default.txt | sed "s/k=rsa.* \"p=/k=rsa; p=/;s/\"\s*\"//;s/\"\s*).*//" | grep -o "p=.*")"
 dkimentry="default._domainkey	TXT		v=DKIM1; k=rsa; $pval"
-dmarcentry="_dmarc	TXT		v=DMARC1; p=none; rua=mailto:dmarc@$domain; fo=1"
+dmarcentry="_dmarc	TXT		v=DMARC1; p=quarantine; rua=mailto:dmarc@$domain; fo=1"
 spfentry="@		TXT		v=spf1 mx a:$domain -all"
 
 postfix check
